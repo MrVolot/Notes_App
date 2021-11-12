@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">Notes_App</string>
     <string name="header">Header</string>
+    <string name="addNote">Add note</string>
     <string name="title">Notes</string>
     <string name="content">Content</string>
+    <string name="saveBtn">Save</string>
 </resources>

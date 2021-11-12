@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -22,10 +23,47 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 
+import com.google.gson.Gson;
+
 public class MainActivity extends AppCompatActivity {
     static ArrayList<String> notes = new ArrayList<>();
     static ArrayAdapter arrayAdapter;
     static  ListView listView;
+    static int count;
+    private boolean isFirstLaunch = true;
+
+    private void updateList(){
+        SharedPreferences sharedPreferencesCount = getApplicationContext().getSharedPreferences("com.example.notes", Context.MODE_PRIVATE);
+        String strCount = sharedPreferencesCount.getString("count",null);
+        if(strCount==null){
+            count = 0;
+        }else{
+            count = Integer.parseInt(strCount);
+        }
+        listView = findViewById(R.id.listView);
+        SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences("com.example.notes", Context.MODE_PRIVATE);
+        notes = new ArrayList();
+        for(int i=1;i<=count;i++) {
+            Gson gson = new Gson();
+            String json = sharedPreferences.getString("notes" + i, null);
+            Note obj = gson.fromJson(json, Note.class);
+            if (obj == null) {
+                continue;
+            }
+            notes.add(obj.getHeader());
+        }
+        if(isFirstLaunch) {
+            isFirstLaunch=false;
+            return;
+        }
+        finish();
+        startActivity(getIntent());
+    }
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateList();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -50,22 +88,33 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        SharedPreferences sharedPreferencesCount = getApplicationContext().getSharedPreferences("com.example.notes", Context.MODE_PRIVATE);
+        String strCount = sharedPreferencesCount.getString("count",null);
+        if(strCount==null){
+            count = 0;
+        }else{
+            count = Integer.parseInt(strCount);
+        }
         listView = findViewById(R.id.listView);
         SharedPreferences sharedPreferences = getApplicationContext().getSharedPreferences("com.example.notes", Context.MODE_PRIVATE);
-        HashSet<String> set = (HashSet<String>) sharedPreferences.getStringSet("notes", null);
+        notes = new ArrayList();
+        for(int i=1;i<=count;i++) {
+            Gson gson = new Gson();
+            String json = sharedPreferences.getString("notes"+i, null);
+            Note obj = gson.fromJson(json, Note.class);
+        if (obj == null) {
+           continue;
+        }
+        notes.add(obj.getHeader());
 
-        if (set == null) {
-
-            notes.add("Example note");
-        } else {
-            notes = new ArrayList(set);
         }
 
         arrayAdapter = new ArrayAdapter(this, android.R.layout.simple_expandable_list_item_1, notes);
         listView.setAdapter(arrayAdapter);
+
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -73,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
 
                 // Going from MainActivity to NotesEditorActivity
                 Intent intent = new Intent(getApplicationContext(), notes_editor.class);
-                intent.putExtra("noteId", i);
+                intent.putExtra("noteId", i+1);
                 startActivity(intent);
 
             }
@@ -90,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 Intent intent = new Intent(getApplicationContext(), notes_deletion.class);
-                                intent.putExtra("noteId", noteToDelete);
+                                intent.putExtra("noteId", noteToDelete + 1);
                                 startActivity(intent);
                             }
                         }).setNegativeButton("No", null).show();
